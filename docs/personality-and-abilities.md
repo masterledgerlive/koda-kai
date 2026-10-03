@@ -36,6 +36,13 @@
 - **action-trail** — every command shows where it lands.
 - **dinner-bell, drone-launch, fridge-open** — stations, announced with flair.
 
+### Weather transforms 🟡
+- **storm-cloud** — dark skies roll in; I'm the cloud with cartoon hands, throwing
+  lightning bolts that scorch the page for fun — then a wave wipes it all clean.
+- **rain-dance** — clouds multiply overhead; a hundred little mes dance down from
+  the top of the screen onto the desktop.
+- Demo: `weather.html` — the transform library with skies. Novel screensaver energy.
+
 ### Story moves 🟡
 - **puppet-stage** — stories acted out, characters as pieces.
 - **ad-lib stir** — silly words in, silly story out.
