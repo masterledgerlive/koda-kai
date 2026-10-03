@@ -46,6 +46,14 @@ This is where Kai gives Koda Kai its shape:
    the puppet stage.
 6. Every drawing the kids ever make becomes a citizen of the world. Lifelong.
 
+### Essence preservation (David's rule)
+
+The upgrade is an *extension of the kid's mind*, never a replacement. The re-render
+keeps their lines, their colors, their scribbles outside the lines — it adds light,
+texture, and background *around* what they made. The kid must always point at the
+finished piece and say "that's MY dragon." If the upgrade ever "fixes" the drawing
+into something unrecognizable, it failed.
+
 ## Placeholders → finals
 
 - Today's placeholders (SVG/CSS art in the app) get replaced **per-section** as
