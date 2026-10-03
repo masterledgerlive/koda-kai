@@ -124,6 +124,14 @@
     <div class="pal" draggable="true" data-kind="au" data-id="tune"><span class="e">🎵</span>Tune</div>
     <div class="pal" draggable="true" data-kind="au" data-id="ding"><span class="e">🔔</span>Ding</div>
     <div class="pal" draggable="true" data-kind="au" data-id="hello"><span class="e">🎤</span>Hello</div>
+    <h4>Media</h4>
+    <div class="pal" id="impAudio"><span class="e">🎵</span>Sound file</div>
+    <div class="pal" id="impVideo"><span class="e">🎬</span>Video file</div>
+    <div class="pal" id="impImg"><span class="e">🖼️</span>Picture / drawing</div>
+    <div class="pal" id="recMic"><span class="e">🎤</span>Record voice</div>
+    <input type="file" id="fileAu" accept="audio/*" hidden>
+    <input type="file" id="fileVi" accept="video/*" hidden>
+    <input type="file" id="fileIm" accept="image/*" hidden>
   </div>
   <div id="main">
     <div id="stage"><div id="flashFx"></div></div>
@@ -136,6 +144,7 @@
       <button class="abtn" data-act="speak">💬 Speak</button>
       <button class="abtn" data-act="grow">🔍 Grow</button>
       <button class="abtn" data-act="shrink">🔎 Shrink</button>
+      <label style="font-size:13px;color:var(--dim)">Size <input type="range" id="sizeSlider" min="30" max="250" value="100" style="width:90px;vertical-align:middle"></label>
       <button class="abtn" data-act="del" style="border-color:#ff8a8a;color:#ff8a8a">🗑️</button>
       <div id="chips"></div>
     </div>
@@ -174,6 +183,7 @@ const stage=document.getElementById('stage'), hint=document.getElementById('hint
       playhead=document.getElementById('playhead'), timeLbl=document.getElementById('timeLbl');
 const scene=()=>project.scenes[cur];
 const $=s=>document.querySelector(s);
+function olabel(o){ return o.kind==='img'?'🖼️':o.kind==='video'?'🎬':(CHARS[o.char]||'⭐'); }
 /* ---------- audio ---------- */
 let AC=null;
 function ac(){ if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended') AC.resume(); return AC; }
@@ -181,7 +191,9 @@ function beep(f,t0,dur,type){ try{ const c=ac(),o=c.createOscillator(),g=c.creat
   o.type=type||'sine'; o.frequency.value=f; g.gain.setValueAtTime(.25,c.currentTime+t0);
   g.gain.exponentialRampToValueAtTime(.001,c.currentTime+t0+dur);
   o.connect(g); g.connect(c.destination); o.start(c.currentTime+t0); o.stop(c.currentTime+t0+dur);}catch(e){} }
-function playAudio(id){ if(id==='tune'){ [523,659,784,1047,784].forEach((f,i)=>beep(f,i*.16,.22,'triangle')); }
+function playAudio(a){ const id=a.name||a;
+  if(a.url){ try{ new Audio(a.url).play(); }catch(e){} return; }
+  if(id==='tune'){ [523,659,784,1047,784].forEach((f,i)=>beep(f,i*.16,.22,'triangle')); }
   else if(id==='ding'){ beep(880,0,.5); beep(1320,.05,.4); }
   else if(id==='hello'){ try{ const u=new SpeechSynthesisUtterance('Hello!'); speechSynthesis.speak(u);}catch(e){} } }
 function say(t){ hint.textContent=t; }
@@ -191,8 +203,12 @@ function renderStage(){
   scene().objects.forEach(o=>{
     const d=document.createElement('div'); d.className='obj'+(selObj===o.id?' sel':'');
     d.dataset.id=o.id; d.style.left=o.x+'%'; d.style.top=o.y+'%';
-    d.style.fontSize=(44*(o.scale||1))+'px';
-    d.innerHTML='<span class="bub"></span>'+CHARS[o.char];
+    const sc=o.scale||1;
+    let inner='<span class="bub"></span>';
+    if(o.kind==='img') inner+='<img src="'+o.src+'" style="width:'+Math.round(110*sc)+'px;border-radius:10px;pointer-events:none;display:block">';
+    else if(o.kind==='video') inner+='<video src="'+o.src+'" style="width:'+Math.round(180*sc)+'px;border-radius:10px;pointer-events:none;display:block" loop playsinline></video>';
+    else { d.style.fontSize=(44*sc)+'px'; inner+=CHARS[o.char]; }
+    d.innerHTML=inner;
     d.addEventListener('click',ev=>{ ev.stopPropagation();
       if(moveArm && selObj===o.id){ o.x=pct(ev,'x'); o.y=pct(ev,'y'); moveArm=false;
         pushAction(o,{t:'move',x:o.x,y:o.y,at:playT}); say('Got it — moving there!'); renderAll(); return; }
@@ -220,14 +236,14 @@ stage.addEventListener('drop',e=>{ e.preventDefault();
 /* ---------- selection & actions ---------- */
 function getObj(id){ return scene().objects.find(o=>o.id===id); }
 function selectObj(id){ selObj=id; renderAll();
-  const o=getObj(id); say(o?('Selected '+CHARS[o.char]+' — pick actions, or drag more stuff in.'):''); }
+  const o=getObj(id); say(o?('Selected '+olabel(o)+' — pick actions, or drag more stuff in.'):''); }
 function pushAction(o,a){ o.actions.push(a); o.actions.sort((x,y)=>x.at-y.at); }
 document.querySelectorAll('#actionBar .abtn').forEach(b=>b.addEventListener('click',()=>{
   const o=getObj(selObj); if(!o) return;
   const act=b.dataset.act;
   if(act==='del'){ scene().objects=scene().objects.filter(x=>x.id!==o.id); selObj=null; renderAll(); return; }
-  if(act==='move'){ moveArm=true; say('Click anywhere on the stage — '+CHARS[o.char]+' will travel there!'); return; }
-  if(act==='speak'){ const t=prompt('What should '+CHARS[o.char]+' say?','Hello!'); if(t===null) return;
+  if(act==='move'){ moveArm=true; say('Click anywhere on the stage — '+olabel(o)+' will travel there!'); return; }
+  if(act==='speak'){ const t=prompt('What should '+olabel(o)+' say?','Hello!'); if(t===null) return;
     pushAction(o,{t:'speak',text:t.slice(0,40)||'Hi!',at:playT}); }
   else if(act==='grow'){ o.scale=Math.min(2,(o.scale||1)+.25); pushAction(o,{t:'grow',at:playT}); }
   else if(act==='shrink'){ o.scale=Math.max(.5,(o.scale||1)-.25); pushAction(o,{t:'shrink',at:playT}); }
@@ -246,7 +262,7 @@ function renderChips(){ chips.innerHTML='';
 function renderStrip(){ const fs=document.getElementById('filmstrip'); fs.innerHTML='';
   project.scenes.forEach((s,i)=>{ const d=document.createElement('div');
     d.className='frame'+(i===cur?' on':'');
-    d.innerHTML='<div class="th">'+(s.objects.map(o=>CHARS[o.char]).join('')||'🎬')+'</div><div class="nm">'+s.name+'</div>'
+    d.innerHTML='<div class="th">'+(s.objects.map(o=>olabel(o)).join('')||'🎬')+'</div><div class="nm">'+s.name+'</div>'
       +(project.scenes.length>1?'<span class="x" data-i="'+i+'">×</span>':'');
     d.addEventListener('click',e=>{ if(e.target.classList.contains('x')) return;
       cur=i; selObj=null; stop(); renderAll(); });
@@ -268,12 +284,12 @@ function renderLanes(){
         la=document.querySelector('.lane[data-lane="au"]');
   scene().objects.forEach(o=>{ const b=document.createElement('div'); b.className='blk char';
     b.style.left=(0)+'%'; b.style.width='100%'; b.style.opacity=.85;
-    b.textContent=CHARS[o.char]+' ×'+o.actions.length+' actions';
+    b.textContent=olabel(o)+' ×'+o.actions.length+' actions';
     b.title='Click to select'; b.addEventListener('click',()=>selectObj(o.id)); lc.appendChild(b); });
   scene().effects.forEach(f=>{ const b=document.createElement('div'); b.className='blk fx';
     b.style.left=(f.at/DUR*100)+'%'; b.textContent=FXN[f.type].split(' ')[0]; lf.appendChild(b); });
   scene().audio.forEach(a=>{ const b=document.createElement('div'); b.className='blk au';
-    b.style.left=(a.at/DUR*100)+'%'; b.textContent=AUN[a.name].split(' ')[0]; la.appendChild(b); });
+    b.style.left=(a.at/DUR*100)+'%'; b.textContent=(a.label||AUN[a.name]||'🎵').split(' ')[0]+' '+(a.label||AUN[a.name]||'').split(' ').slice(1).join(' '); la.appendChild(b); });
 }
 document.querySelectorAll('.lane').forEach(l=>{
   l.addEventListener('dragover',e=>e.preventDefault());
@@ -314,8 +330,8 @@ function doAction(o,a){ const el=stage.querySelector('.obj[data-id="'+o.id+'"]')
   else if(a.t==='speak'){ const b=el.querySelector('.bub'); b.textContent=a.text; b.style.display='block';
     try{ const u=new SpeechSynthesisUtterance(a.text); speechSynthesis.speak(u);}catch(e){}
     setTimeout(()=>b.style.display='none',2200); }
-  else if(a.t==='grow'){ o.scale=Math.min(2,(o.scale||1)+.25); el.style.fontSize=(44*o.scale)+'px'; }
-  else if(a.t==='shrink'){ o.scale=Math.max(.5,(o.scale||1)-.25); el.style.fontSize=(44*o.scale)+'px'; }
+  else if(a.t==='grow'){ o.scale=Math.min(2.5,(o.scale||1)+.25); renderStage(); }
+  else if(a.t==='shrink'){ o.scale=Math.max(.3,(o.scale||1)-.25); renderStage(); }
 }
 function tick(){ if(!playing) return;
   playT+=0.05;
@@ -324,17 +340,21 @@ function tick(){ if(!playing) return;
   s.objects.forEach(o=>o.actions.forEach((a,i)=>{ const k=o.id+i;
     if(a.at<=playT && !fired.has(k)){ fired.add(k); doAction(o,a); } }));
   s.effects.forEach((f,i)=>{ const k='e'+i; if(f.at<=playT && !fired.has(k)){ fired.add(k); fireFx(f.type); } });
-  s.audio.forEach((a,i)=>{ const k='a'+i; if(a.at<=playT && !fired.has(k)){ fired.add(k); playAudio(a.name); } });
+  s.audio.forEach((a,i)=>{ const k='a'+i; if(a.at<=playT && !fired.has(k)){ fired.add(k); playAudio(a); } });
   playhead.style.left=(playT/DUR*100)+'%'; timeLbl.textContent=playT.toFixed(1)+'s / '+DUR+'s';
   raf=requestAnimationFrame(()=>setTimeout(tick,50));
 }
 document.getElementById('playBtn').addEventListener('click',()=>{
   if(playing) return;
   if(playT>=DUR-0.05){ playT=0; fired.clear(); renderStage(); }
-  playing=true; document.getElementById('playBtn').textContent='⏸ Playing…'; tick(); });
+  playing=true; document.getElementById('playBtn').textContent='⏸ Playing…';
+  stage.querySelectorAll('video').forEach(v=>{ v.play().catch(()=>{}); });
+  tick(); });
 function stop(){ playing=false; playT=0; fired.clear(); cancelAnimationFrame(raf);
   playhead.style.left='0%'; timeLbl.textContent='0.0s / '+DUR+'s';
-  document.getElementById('playBtn').textContent='▶ Play'; renderStage(); }
+  document.getElementById('playBtn').textContent='▶ Play';
+  stage.querySelectorAll('video').forEach(v=>{ v.pause(); try{v.currentTime=0;}catch(e){} });
+  renderStage(); }
 document.getElementById('stopBtn').addEventListener('click',()=>{ stop(); say('Back to the start.'); });
 /* ---------- views ---------- */
 document.getElementById('tvBtn').addEventListener('click',()=>{
@@ -353,14 +373,14 @@ function renderCode(){ const cv=document.getElementById('codeView'); cv.innerHTM
   const s=scene();
   let h='<div class="stack"><div class="pblock event">when ▶ clicked</div>';
   h+='<div class="pblock event">switch backdrop to <span class="slot">'+s.name+'</span></div></div>';
-  s.objects.forEach(o=>{ h+='<div class="stack" data-obj="'+o.id+'"><h5>'+CHARS[o.char]+' — drag blocks to reorder, × to remove</h5>';
+  s.objects.forEach(o=>{ h+='<div class="stack" data-obj="'+o.id+'"><h5>'+olabel(o)+' — drag blocks to reorder, × to remove</h5>';
     o.actions.forEach((a,i)=>{ const m=ANM[a.t]; if(!m) return;
       let label=m[1].replace('%x',Math.round(a.x)).replace('%y',Math.round(a.y)).replace('%text',(a.text||'').replace(/</g,'&lt;'));
       h+='<div class="pblock '+m[0]+'" draggable="true" data-obj="'+o.id+'" data-i="'+i+'"><span class="x" data-obj="'+o.id+'" data-i="'+i+'">×</span>'+label+'</div>'; });
     if(!o.actions.length) h+='<div style="color:var(--dim);font-size:13px;margin-left:18px">no blocks yet — add actions on the stage!</div>';
     h+='</div>'; });
   if(s.audio.length){ h+='<div class="stack"><h5>🔊 Sounds</h5>';
-    s.audio.forEach(a=>{ h+='<div class="pblock sound">play sound <span class="slot">'+AUN[a.name]+'</span></div>'; });
+    s.audio.forEach(a=>{ h+='<div class="pblock sound">play sound <span class="slot">'+(a.label||AUN[a.name]||'sound')+'</span></div>'; });
     h+='</div>'; }
   h+='<p style="color:var(--dim);font-size:13px">This is the real code behind your movie — every block is a timeline action. Same story, two languages.</p>';
   cv.innerHTML=h;
@@ -377,6 +397,43 @@ function renderCode(){ const cv=document.getElementById('codeView'); cv.innerHTM
       renderCode(); renderAll(); say('Blocks re-stacked — the timeline follows!'); });
   });
 }
+/* ---------- media import + mic ---------- */
+document.getElementById('impAudio').addEventListener('click',()=>document.getElementById('fileAu').click());
+document.getElementById('impVideo').addEventListener('click',()=>document.getElementById('fileVi').click());
+document.getElementById('impImg').addEventListener('click',()=>document.getElementById('fileIm').click());
+document.getElementById('fileAu').addEventListener('change',e=>{ const f=e.target.files[0]; if(!f) return;
+  scene().audio.push({name:'file',label:'🎵 '+f.name.slice(0,20),url:URL.createObjectURL(f),at:playT});
+  say('Sound on the timeline at '+playT.toFixed(1)+'s.'); renderAll(); e.target.value=''; });
+document.getElementById('fileVi').addEventListener('change',e=>{ const f=e.target.files[0]; if(!f) return;
+  const o={id:'o'+(++uidc),kind:'video',src:URL.createObjectURL(f),x:50,y:40,scale:1,actions:[]};
+  scene().objects.push(o); selectObj(o.id); say('🎬 Video on stage — size it freely, give it actions!'); e.target.value=''; });
+document.getElementById('fileIm').addEventListener('change',e=>{ const f=e.target.files[0]; if(!f) return;
+  const o={id:'o'+(++uidc),kind:'img',src:URL.createObjectURL(f),x:50,y:40,scale:1,actions:[]};
+  scene().objects.push(o); selectObj(o.id); say('🖼️ Picture on stage — your drawing is an actor now!'); e.target.value=''; });
+let MR=null;
+document.getElementById('recMic').addEventListener('click',async ()=>{
+  const btn=document.getElementById('recMic');
+  if(MR){ MR.stop(); return; }
+  try{
+    const st=await navigator.mediaDevices.getUserMedia({audio:true});
+    const chunks=[]; MR=new MediaRecorder(st);
+    MR.ondataavailable=e=>chunks.push(e.data);
+    MR.onstop=()=>{ const url=URL.createObjectURL(new Blob(chunks,{type:MR.mimeType||'audio/webm'}));
+      scene().audio.push({name:'file',label:'🎤 my voice',url,at:playT});
+      st.getTracks().forEach(t=>t.stop()); MR=null;
+      btn.innerHTML='<span class="e">🎤</span>Record voice';
+      say('Your voice is on the timeline at '+playT.toFixed(1)+'s!'); renderAll(); };
+    MR.start(); btn.innerHTML='<span class="e">⏹</span>Stop';
+    say('Recording… click Stop when done.');
+  }catch(err){ say('Mic is blocked — allow microphone access and try again.'); }
+});
+document.getElementById('sizeSlider').addEventListener('input',e=>{
+  const o=getObj(selObj); if(!o) return;
+  o.scale=e.target.value/100; renderStage(); });
+/* keep slider in sync when selecting */
+const _selectObj=selectObj;
+selectObj=function(id){ _selectObj(id); const o=getObj(id);
+  if(o) document.getElementById('sizeSlider').value=Math.round((o.scale||1)*100); };
 /* ---------- render all ---------- */
 function renderAll(){ renderStage(); renderStrip(); renderLanes(); renderChips();
   actionBar.classList.toggle('show',!!selObj); }
