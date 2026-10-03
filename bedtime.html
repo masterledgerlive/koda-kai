@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bedtime Stories — Kodakai</title>
+<style>
+  :root{--night:#0b1026;--night2:#141b3d;--gold:#ffd166;--ink:#eef2ff;--dim:#9aa3c7;--drop:#4cc9f0;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{margin:0;font-family:Georgia,'Times New Roman',serif;color:var(--ink);min-height:100vh;
+    background:radial-gradient(900px 600px at 50% -10%,var(--night2),var(--night));}
+  .stars{position:fixed;inset:0;pointer-events:none;}
+  .tw{position:absolute;color:#fff;animation:tw 3s ease-in-out infinite;}
+  @keyframes tw{50%{opacity:.25;}}
+  header{text-align:center;padding:26px 16px 4px;position:relative;}
+  header h1{margin:0;font-size:30px;font-weight:normal;}
+  header p{color:var(--dim);font-size:15px;font-style:italic;margin:8px 0 0;}
+  #dropMoon{font-size:64px;display:block;margin-bottom:6px;animation:float 5s ease-in-out infinite;}
+  @keyframes float{50%{transform:translateY(-10px);}}
+  #app{max-width:640px;margin:0 auto;padding:14px;position:relative;}
+  .card{background:rgba(20,27,61,.85);border:1px solid #2a3568;border-radius:18px;padding:20px;margin-bottom:14px;}
+  .modes{display:flex;gap:10px;}
+  .mode{flex:1;border:1px solid #2a3568;background:#141b3d;color:var(--ink);border-radius:14px;
+    padding:16px;font-size:16px;cursor:pointer;font-family:inherit;}
+  .mode small{display:block;color:var(--dim);font-size:13px;margin-top:6px;font-style:italic;}
+  .mode.on{border-color:var(--gold);box-shadow:0 0 18px rgba(255,209,102,.25);}
+  label{display:block;margin:12px 0 4px;color:var(--dim);font-size:14px;font-style:italic;}
+  input{width:100%;background:#0b1026;border:1px solid #2a3568;color:var(--ink);border-radius:10px;
+    padding:12px;font-size:16px;font-family:inherit;}
+  .big{width:100%;border:none;border-radius:14px;padding:15px;font-size:18px;font-weight:700;cursor:pointer;
+    background:var(--gold);color:#3a2c00;font-family:inherit;margin-top:14px;}
+  .ghost{background:#141b3d;color:var(--ink);border:1px solid #2a3568;margin-top:10px;}
+  #story{display:none;}
+  #story.show{display:block;animation:fadein 1.2s ease;}
+  @keyframes fadein{from{opacity:0;transform:translateY(12px);}}
+  #story h2{font-weight:normal;font-size:24px;margin:0 0 4px;color:var(--gold);}
+  #story .chap{color:var(--dim);font-style:italic;font-size:14px;margin-bottom:14px;}
+  #story p{line-height:1.85;font-size:17.5px;margin:0 0 16px;}
+  #story p b{color:var(--gold);font-weight:normal;}
+  .row{display:flex;gap:10px;}
+  .row .big,.row .ghost{margin-top:10px;}
+  footer{text-align:center;color:var(--dim);font-size:12px;padding:22px;font-family:-apple-system,system-ui,sans-serif;}
+  footer a{color:var(--drop);}
+</style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+<header>
+  <span id="dropMoon">💧🌙</span>
+  <h1>Bedtime Stories</h1>
+  <p>a little imagination, clean and calm, made up on the spot</p>
+</header>
+<div id="app">
+  <div class="card" id="setup">
+    <div class="modes">
+      <button class="mode on" data-mode="classic">📖<br>Classic tale<small>a gentle one-time story</small></button>
+      <button class="mode" data-mode="adventure">🌊<br>Koda Kai adventure<small>continues a little every night</small></button>
+    </div>
+    <div id="savedNote" style="display:none;margin-top:10px;color:var(--gold);font-style:italic;font-size:14px"></div>
+    <label>Who is tonight's story for?</label>
+    <input id="inName" placeholder="Kai" maxlength="20">
+    <label>A animal helper</label>
+    <input id="inAnimal" placeholder="sleepy turtle" maxlength="24">
+    <label>A cozy bedtime snack</label>
+    <input id="inSnack" placeholder="warm banana bread" maxlength="28">
+    <button class="big" id="tellBtn">✨ Tell tonight's story</button>
+  </div>
+  <div class="card" id="story">
+    <h2 id="stTitle"></h2>
+    <div class="chap" id="stChap"></div>
+    <div id="stBody"></div>
+    <div class="row">
+      <button class="big" id="readBtn" style="flex:1">🔊 Read to me</button>
+      <button class="big ghost" id="againBtn" style="flex:1">🌙 New story</button>
+    </div>
+  </div>
+</div>
+<footer><a href="creation-station.html">← creation station</a> · <a href="index.html">Koda Kai</a></footer>
+<script>
+const $=id=>document.getElementById(id);
+let mode='classic';
+/* starfield */
+(()=>{ const s=$('stars'); for(let i=0;i<70;i++){ const d=document.createElement('div');
+  d.className='tw'; d.textContent='·'; d.style.left=Math.random()*100+'%'; d.style.top=Math.random()*60+'%';
+  d.style.fontSize=(6+Math.random()*14)+'px'; d.style.animationDelay=(Math.random()*3)+'s'; s.appendChild(d); } })();
+document.querySelectorAll('.mode').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.mode').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+  mode=b.dataset.mode; checkSaved(); }));
+const store={ get(){ try{ return JSON.parse(localStorage.getItem('kk_bedtime')||'null'); }catch(e){ return null; } },
+  set(v){ try{ localStorage.setItem('kk_bedtime',JSON.stringify(v)); }catch(e){} } };
+function checkSaved(){ const sv=store.get(), n=$('savedNote');
+  if(sv&&sv.mode==='adventure'){ n.style.display='block';
+    n.textContent='🌊 The adventure waits at Chapter '+sv.chapter+' — tonight it continues.';
+    $('inName').value=sv.name||''; $('inAnimal').value=sv.animal||''; $('inSnack').value=sv.snack||'';
+  } else n.style.display='none'; }
+checkSaved();
+const pick=a=>a[Math.random()*a.length|0];
+const fireflies=['Pip','Lulu','Nixie','Bram'];
+function d(){ return { name:($('inName').value||'Kai').trim(), animal:($('inAnimal').value||'sleepy turtle').trim(),
+  snack:($('inSnack').value||'warm banana bread').trim(), ff:pick(fireflies) }; }
+/* ---------- stories ---------- */
+function classicA(x){
+  const tale=Math.random()<.5?'sailboat':'train';
+  if(tale==='sailboat') return { title:'The Brave Little Sailboat',
+    body:[`Far out on the glassy night water lived a little sailboat named <b>${x.name}</b>. Every evening, when the sun melted into the sea, ${x.name} would shiver. "The dark is so big," she whispered to a <b>${x.animal}</b> who paddled by, "and I am so small."`,
+    `The ${x.animal} smiled a slow, sleepy smile. "Watch," he said, and pointed up. One by one, the stars blinked on like night-lights, and the moon poured a silver road across the waves — a road made just for small boats.`,
+    `"The night isn't empty," said the moon, in her softest voice. "It's just the day, tucked in and dreaming. And I'll keep my lamp on until you reach the morning."`,
+    `So ${x.name} sailed the silver road, the ${x.animal} humming beside her, all the way to a cozy cove where someone had left <b>${x.snack}</b> on the dock. She ate one warm bite, yawned the biggest yawn, and slept — rocked by waves, watched by the moon.`,
+    `And if you listen tonight, you can still hear the water humming her lullaby. Goodnight.`].join('</p><p>') };
+  return { title:'The Little Night Train',
+    body:[`In a valley of soft hills, a little night train named <b>${x.name}</b> was afraid of the tunnels. "They're so dark," he peeped, "and my lamp is so small." A <b>${x.animal}</b> who lived by the tracks heard him and climbed aboard.`,
+    `"Then we'll be brave together," said the ${x.animal}. "One tunnel at a time." And do you know what they found inside the very first tunnel? Fireflies — hundreds of them, spelling WELCOME in wiggly lights.`,
+    `Tunnel after tunnel, the fireflies lit the way, until the train rolled into a station where the platform smelled of <b>${x.snack}</b>. The conductor shared it all around, and the little train's lamp glowed a tiny bit brighter.`,
+    `"See?" yawned the ${x.animal}, curling up in the warm engine. "Dark is just a tunnel. And every tunnel ends somewhere cozy." The little train agreed — and was asleep before the last tunnel. Goodnight.`].join('</p><p>') };
+}
+function classicB(x){
+  return { title:'The Star Who Lost Her Twinkle',
+    body:[`High above the clouds lived a small star named <b>${x.name}</b>. Every night she twinkled her brightest — until one evening, mid-twinkle, it simply… stopped. No sparkle. No shimmer. Just a small gray dot where her twinkle used to be.`,
+    `"Oh no," she whispered, and the whisper fell all the way down to a garden, where a <b>${x.animal}</b> heard it land like a feather.`,
+    `The ${x.animal} did a very kind thing. He gathered every shiny thing he could find — a spoon, a marble, a puddle holding the moon — and piled them where ${x.name} could see. "Borrow our shine," he called up, "until yours comes back."`,
+    `And ${x.name} laughed — a real, bubbly, starry laugh — and the laugh shook something loose inside her, and out popped her twinkle, brighter than ever, because laughter had polished it.`,
+    `She twinkled so hard that night that sailors used her as a lighthouse, and down in the garden, the ${x.animal} fell asleep under a blanket of <b>${x.snack}</b> crumbs, smiling. The end. Goodnight.`].join('</p><p>') };
+}
+const ADV_TITLES=['The Lost Glow-Pearl','The Sleepy Whale\u2019s Lullaby','The Tide That Forgot Its Way Home'];
+function adventure(x,n){
+  const intro=`Every night, after the kids are asleep, <b>Drop</b> slips out to watch over the lagoon — because somebody has to keep the moon's reflection safe. Tonight, ${x.name}'s dreams are floating nearby, and a <b>${x.animal}</b> has come along to help.`;
+  let quest='';
+  if(n===1) quest=`Tonight's trouble is small and round: the moon has dropped her favorite <b>glow-pearl</b>, and it's sinking through the dark water, going <i>plip… plip… plip</i>. Drop dives — deeper than deep — past the snoring seahorses, and catches it just before the crab post office closes. The moon pops it back into the sky, and the whole lagoon glows like bathwater.`;
+  else if(n===2) quest=`Tonight, a <b>baby whale</b> can't fall asleep. She's too big for lullabies and too small to be tired. So Drop teaches the waves to hum — <i>hmmmmm, hmmmmm</i> — and the ${x.animal} keeps the beat with two shells, <i>clack… clack…</i>, until the whale's enormous eye closes like a slow curtain. "Shhh," says the whole ocean.`;
+  else if(n===3) quest=`Tonight the <b>tide forgot its way home</b>. It wandered off chasing a shiny bottle cap and now it's lost among the mangroves, embarrassed. Drop leaves a trail of ${x.snack} crumbs (the tide loves snacks), and the ${x.animal} carries a lantern, and together they walk the tide home — in, out, in, out — until it remembers the rhythm and sighs with relief.`;
+  else { const qs=[
+    `Tonight the <b>fireflies are holding a lantern parade</b>, and ${x.ff} the littlest firefly is scared her light is too dim. Drop cups her gently — "small lights count double," he says — and she leads the whole parade, proud as sunrise.`,
+    `Tonight a <b>grumpy cloud</b> is blocking the stars. Drop doesn't argue; he just tells the cloud a story so cozy — about ${x.snack} and warm blankets — that the cloud sighs, turns pink, and drifts off to let the starlight through.`,
+    `Tonight the <b>sand crabs are building a moon-castle</b> and keep arguing about the front door. The ${x.animal} suggests <i>two</i> front doors, everybody cheers, and Drop is named Honorary Doorman for life.`];
+    quest=pick(qs); }
+  const end=`Back in the warm house, ${x.name} is dreaming — maybe of glow-pearls, maybe of whales. Drop curls up on the windowsill, the ${x.animal} yawns, and the lagoon goes <i>shhhh</i>. Chapter ${n} is done. Tomorrow night, the tide will bring a new one. Goodnight.`;
+  return { title:'Drop and the Midnight Tide', chap:'Chapter '+n+' — tonight\u2019s gentle quest',
+    body:[intro,quest,end].join('</p><p>') };
+}
+/* ---------- tell ---------- */
+$('tellBtn').addEventListener('click',()=>{
+  const x=d(); let s, chapLine='';
+  if(mode==='classic'){ s=Math.random()<.5?classicA(x):classicB(x); }
+  else { const sv=store.get(); const n=(sv&&sv.mode==='adventure')?sv.chapter:1;
+    s=adventure(x,n); chapLine=s.chap;
+    store.set({mode:'adventure',chapter:n+1,name:x.name,animal:x.animal,snack:x.snack}); checkSaved(); }
+  $('stTitle').textContent=s.title; $('stChap').textContent=chapLine;
+  $('stBody').innerHTML='<p>'+s.body+'</p>';
+  $('story').classList.add('show');
+  $('story').scrollIntoView({behavior:'smooth'});
+  window._storyText=$('stBody').innerText;
+});
+$('againBtn').addEventListener('click',()=>{ $('story').classList.remove('show'); window.scrollTo({top:0,behavior:'smooth'}); });
+$('readBtn').addEventListener('click',()=>{ try{
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(($('stTitle').textContent+'. '+(window._storyText||'')));
+  u.rate=.88; u.pitch=1.05; speechSynthesis.speak(u);
+}catch(e){} });
+</script>
+</body>
+</html>
