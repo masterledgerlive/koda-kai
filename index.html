@@ -1520,7 +1520,7 @@ function raTick(){
 function shuffleOf(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
 function vidCard(v){
   const inList=S.mylist.indexOf(v[0])>=0;
-  return '<div style="position:relative;"><button class="vidcard" data-vid="'+v[0]+'" style="width:100%;"><img loading="lazy" src="assets/thumbs/'+v[0]+'.jpg" alt=""/>'+
+  return '<div style="position:relative;"><button class="vidcard" data-vid="'+v[0]+'" style="width:100%;"><img loading="lazy" src="https://i.ytimg.com/vi/'+v[0]+'/hqdefault.jpg" onerror="if(!this.dataset.f){this.dataset.f=1;this.src=this.src.replace('hqdefault','mqdefault');}else{this.style.display='none'}" alt=""/>'+
     '<span class="vt">'+esc(v[1])+'</span><span class="vc">'+esc(CHNAME[v[2]]||"")+'</span></button>'+
     '<button class="fav'+(inList?" on":"")+'" data-fav="'+v[0]+'" aria-label="Star this video">'+I.starLine+'</button></div>';
 }
