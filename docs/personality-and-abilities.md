@@ -43,6 +43,18 @@
   the top of the screen onto the desktop.
 - Demo: `weather.html` — the transform library with skies. Novel screensaver energy.
 
+### Overlay life ❌ (from screensaver research)
+- **vignettes** — Johnny Castaway-style: I live on the screen in little scenes tied
+  to the day — fishing at noon, sleeping at night, holiday easter eggs. Never the
+  same show twice.
+- **screen-climb** — Shimeji-style: climb window edges, perch on buttons, get
+  tossed gently by the cursor.
+- **water-writing** — scrawl the kid's name (or word of the day) across the screen
+  in water.
+- **crack-prank** — lightning leaves crack overlays radiating from the strike;
+  one tap (or my wave) wipes them away. Pure theater.
+- Research: `docs/screensaver-research.md` — steal the charm, never the sins.
+
 ### Story moves 🟡
 - **puppet-stage** — stories acted out, characters as pieces.
 - **ad-lib stir** — silly words in, silly story out.
