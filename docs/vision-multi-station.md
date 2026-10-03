@@ -61,3 +61,17 @@ at the table, in the world.
 **Honest gap:** the app is static today — no sync server exists yet. Presence, voting,
 takeover alerts, and cross-device handoff need that server on the mainframe. That's the
 next system build after the caption engine lands.
+
+## 8. The overlay & handshake model (David's framing)
+
+Nothing new under the hood — the leap is speed and presence. Kodakai is a **layover**:
+it takes over the whole interface of whatever station it's in, thinking fast enough
+that computation feels like a spell — natural responses, no waiting.
+
+The shape is a **hive network with our system inside**: Kodakai lives *inside* each of
+David's systems, not beside them. Every system grants the overlay permission through a
+**handshake** — phone, TV, table, smart home, cameras — and from then on the hive can
+behave and control within that system. All paths lead back to the headquarters
+mainframe: the one place Koda Kai operates from and in.
+
+More stations = more paths to live on. Same mind, faster, everywhere.
