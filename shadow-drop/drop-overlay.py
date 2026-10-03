@@ -12,7 +12,7 @@ Click Drop: he waves and says something. Drag him to move him.
 Launch detached: WMI Win32_Process.Create (survives SSH disconnect).
 """
 import tkinter as tk
-import os, random, time, json
+import os, random, time, json, subprocess
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 SAY = r"C:\Users\Public\Muse\drop-say.txt"
@@ -82,7 +82,13 @@ class Drop:
         if not self.waved_at_start and time.time() - self.t0 > 2:
             self.waved_at_start = True
             self.do_wave()
-            self.say("I'm live on your desktop, David!")
+            hr = time.localtime().tm_hour
+            if 5 <= hr < 12:
+                self.say("Good morning, David! I'm here.")
+            elif 12 <= hr < 18:
+                self.say("Good afternoon, David! I'm here.")
+            else:
+                self.say("I'm live on your desktop, David!")
 
     def blink_loop(self):
         if time.time() > self.busy_until:
@@ -207,6 +213,15 @@ class Drop:
                 pass
         elif p[0] == 'say':
             self.say(ln[4:140])
+        elif p[0] == 'open':
+            target = ln[5:].strip().strip('"')
+            if target and os.path.exists(target):
+                self.say("On it — opening that for you.")
+                self.do_wave()
+                try:
+                    subprocess.Popen(['explorer.exe', target])
+                except Exception:
+                    pass
         elif p[0] == 'hide':
             self.root.withdraw()
         elif p[0] == 'show':
