@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Dance — Kodakai dances the words</title>
+<style>
+  :root{--sea:#0a2233;--sea2:#0e3049;--gold:#ffd166;--teal:#2ec4b6;--drop:#4cc9f0;--ink:#eaf6ff;--dim:#9db8c9;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{margin:0;font-family:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif;
+    background:radial-gradient(1000px 700px at 50% -10%,var(--sea2),var(--sea));color:var(--ink);min-height:100vh;}
+  header{text-align:center;padding:20px 14px 4px;}
+  header h1{margin:0;font-size:24px;}
+  header p{color:var(--dim);font-size:14px;margin:6px 0 0;}
+  #stage{position:relative;max-width:860px;margin:18px auto 0;background:#0c283d;border:1px solid #1e4a68;
+    border-radius:18px;padding:70px 22px 26px;min-height:220px;}
+  #words{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;}
+  .w{background:#123a52;border:1px solid #2a6a94;border-radius:12px;padding:10px 16px;font-size:19px;font-weight:600;
+    transition:background .18s,transform .18s;}
+  .w.lit{background:linear-gradient(135deg,var(--gold),#f4a261);color:#123;border-color:var(--gold);transform:scale(1.08);}
+  #drop{position:absolute;left:0;top:0;width:54px;height:54px;margin:-27px 0 0 -27px;
+    transition:left .22s ease,top .22s ease;filter:drop-shadow(0 4px 10px rgba(76,201,240,.55));z-index:5;}
+  #drop.bounce{animation:bnc .28s ease;}
+  @keyframes bnc{40%{margin-top:-46px;}100%{margin-top:-27px;}}
+  #dropSpin{display:block;transform-box:fill-box;transform-origin:center;}
+  #dropSpin.spin{animation:spn .5s ease;}
+  @keyframes spn{to{transform:rotate(360deg);}}
+  #moveName{text-align:center;margin-top:12px;font-size:15px;color:var(--dim);min-height:22px;}
+  #moveName b{color:var(--gold);}
+  #controls{display:flex;gap:10px;justify-content:center;align-items:center;margin-top:8px;flex-wrap:wrap;padding:0 12px;}
+  .gbtn{border:1px solid #2a6a94;background:#123a52;color:var(--ink);border-radius:14px;
+    padding:12px 22px;font-size:16px;font-weight:700;cursor:pointer;}
+  .gbtn.gold{background:var(--gold);color:#123;border-color:var(--gold);}
+  input[type=range]{width:150px;accent-color:var(--teal);}
+  label{font-size:13px;color:var(--dim);}
+  footer{text-align:center;color:var(--dim);font-size:12px;padding:22px;}
+  footer a{color:var(--drop);}
+</style>
+</head>
+<body>
+<header>
+  <h1>🌊 Word Dance</h1>
+  <p>Drop dances the words — every lit word is a beat he lands on.</p>
+</header>
+<div id="stage">
+  <div id="drop"><svg id="dropSpin" viewBox="-25 -35 50 72" width="54" height="54">
+    <path d="M0,-30 C15,-11 21,0 21,11 A21,21 0 1 1 -21,11 C-21,0 -15,-11 0,-30 Z" fill="#4cc9f0"/>
+    <circle cx="-7" cy="9" r="2.6" fill="#08304a"/><circle cx="7" cy="9" r="2.6" fill="#08304a"/>
+    <path d="M-6,17 Q0,22 6,17" stroke="#08304a" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+  </svg></div>
+  <div id="words"></div>
+</div>
+<div id="moveName">press <b>play</b> — pick a tempo, feel the groove</div>
+<div id="controls">
+  <button class="gbtn gold" id="playBtn">▶ Play</button>
+  <label>tempo <input type="range" id="tempo" min="70" max="160" value="104"> <span id="bpm">104</span></label>
+</div>
+<footer><a href="network.html">← the hive</a> · <a href="index.html">Koda Kai</a> · the caption clock is the choreography grid</footer>
+<script>
+const SENTENCE="Be like water my friend flow and grow and learn".split(" ");
+const wordsEl=document.getElementById('words'), drop=document.getElementById('drop'),
+      spin=document.getElementById('dropSpin'), moveName=document.getElementById('moveName'),
+      playBtn=document.getElementById('playBtn'), tempo=document.getElementById('tempo'),
+      bpm=document.getElementById('bpm'), stage=document.getElementById('stage');
+SENTENCE.forEach(w=>{ const s=document.createElement('span'); s.className='w'; s.textContent=w; wordsEl.appendChild(s); });
+const chips=[...wordsEl.children];
+let playing=false, idx=-1, beat=0, timer=null, AC=null;
+const MOVES=['word-hop','beat-bounce','word-hop','spin-trick'];
+tempo.addEventListener('input',()=>{ bpm.textContent=tempo.value; if(playing) restart(); });
+function ac(){ if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended') AC.resume(); return AC; }
+function kick(t){ const c=ac(),o=c.createOscillator(),g=c.createGain();
+  o.type='sine'; o.frequency.setValueAtTime(150,t); o.frequency.exponentialRampToValueAtTime(42,t+.11);
+  g.gain.setValueAtTime(.5,t); g.gain.exponentialRampToValueAtTime(.001,t+.14);
+  o.connect(g).connect(c.destination); o.start(t); o.stop(t+.15); }
+function hat(t){ const c=ac(),b=c.createBuffer(1,2205,c.sampleRate),d=b.getChannelData(0);
+  for(let i=0;i<2205;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/2205,2);
+  const s=c.createBufferSource(); s.buffer=b;
+  const f=c.createBiquadFilter(); f.type='highpass'; f.frequency.value=7000;
+  const g=c.createGain(); g.gain.setValueAtTime(.18,t); g.gain.exponentialRampToValueAtTime(.001,t+.05);
+  s.connect(f).connect(g).connect(c.destination); s.start(t); }
+function hopTo(i){
+  const r=chips[i].getBoundingClientRect(), sr=stage.getBoundingClientRect();
+  drop.style.left=(r.left-sr.left+r.width/2)+'px';
+  drop.style.top=(r.top-sr.top-34)+'px';
+  chips.forEach((c,j)=>c.classList.toggle('lit', j===i));
+  drop.classList.remove('bounce'); void drop.offsetWidth; drop.classList.add('bounce');
+}
+function doBeat(){
+  beat++;
+  const c=ac(), t=c.currentTime;
+  kick(t); if(beat%2===0) hat(t+.02);
+  idx=(idx+1)%chips.length;
+  const mv=MOVES[beat%MOVES.length];
+  if(mv==='spin-trick'){ spin.classList.remove('spin'); void spin.getBoundingClientRect(); spin.classList.add('spin'); }
+  hopTo(idx);
+  moveName.innerHTML='move: <b>'+mv+'</b> · word <b>'+chips[idx].textContent+'</b>';
+}
+function restart(){ clearInterval(timer); timer=setInterval(doBeat, 60000/tempo.value); }
+playBtn.addEventListener('click',()=>{
+  playing=!playing;
+  playBtn.textContent=playing?'⏸ Pause':'▶ Play';
+  if(playing){ ac(); hopTo(0); idx=0; doBeat(); restart(); }
+  else{ clearInterval(timer); moveName.innerHTML='paused — press <b>play</b> to groove again'; }
+});
+// park drop on the first word at load
+window.addEventListener('load',()=>setTimeout(()=>hopTo(0),300));
+</script>
+</body>
+</html>
