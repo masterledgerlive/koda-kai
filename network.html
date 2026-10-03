@@ -69,6 +69,19 @@
   #builders{margin-top:12px; text-align:center; color:var(--dim); font-size:14px;
     background:var(--card); border:1px dashed #2a6a94; border-radius:12px; padding:12px 16px;}
   #builders b{color:var(--gold);}
+  #commandDeck{margin-top:14px;background:var(--card);border:1px solid #1e4a68;border-radius:16px;padding:14px;}
+  #commandDeck h3{margin:0 0 10px;font-size:17px;}
+  #cmdBtns{display:flex;flex-wrap:wrap;gap:8px;}
+  .cmdbtn{border:1px solid #2a6a94;background:#0e3049;color:var(--ink);border-radius:12px;padding:10px 14px;font-size:14px;font-weight:600;cursor:pointer;}
+  .cmdbtn:active{transform:scale(.95);}
+  .cmdbtn:disabled{opacity:.45;}
+  #actionPanel{margin-top:10px;min-height:20px;}
+  .act{background:#0e3049;border:1px solid #2a6a94;border-radius:12px;padding:12px 14px;font-size:15px;}
+  .vbar{height:14px;background:#08304a;border-radius:8px;overflow:hidden;margin-top:8px;}
+  .vfill{height:100%;background:linear-gradient(90deg,#2ec4b6,#4cc9f0);width:30%;transition:width .3s;}
+  #dropSpin{transform-box:fill-box;transform-origin:center;}
+  .trick{animation:trickspin .8s ease;}
+  @keyframes trickspin{to{transform:rotate(360deg);}}
   /* game night */
   #board{width:100%; height:auto; display:block; background:#0c283d;
     border:1px solid #1e4a68; border-radius:18px; margin-top:12px;}
@@ -107,6 +120,7 @@
       <g id="packets"></g>
       <g id="cities"></g>
       <g id="drop" transform="translate(170,72)">
+        <g id="dropSpin">
         <path d="M0,-30 C15,-11 21,0 21,11 A21,21 0 1 1 -21,11 C-21,0 -15,-11 0,-30 Z" fill="#4cc9f0"/>
         <path d="M-8,-14 C-4,-18 -1,-20 2,-22" stroke="#bfe9ff" stroke-width="4" stroke-linecap="round" fill="none" opacity=".7"/>
         <g id="faceAwake">
@@ -117,6 +131,7 @@
           <path d="M-11,9 L-3,9 M3,9 L11,9" stroke="#08304a" stroke-width="2.4" stroke-linecap="round"/>
         </g>
         <text id="zzz" class="zzz" x="24" y="-12" visibility="hidden">💤</text>
+        </g>
       </g>
     </svg>
     <div id="scenarios">
@@ -127,6 +142,15 @@
       <button class="scn" data-scn="car">🚗 Car mode<small>rides along — nav, tunes, eyes on road</small></button>
       <button class="scn" data-scn="drone">🛸 Drone cam<small>sky eye up — filming the playground</small></button>
       <button class="scn" data-scn="bat">🏏 Smart bat<small>bat + ball data — kids' analytics</small></button>
+    </div>
+    <div id="commandDeck">
+      <h3>🎤 Command deck — say it, watch him swim</h3>
+      <div id="cmdBtns"></div>
+      <div class="addrow" style="margin-top:8px;">
+        <input id="cmdInput" class="txtin" placeholder="Try: volume up on tv…" maxlength="60">
+        <button class="gbtn gold" id="cmdGo">Go</button>
+      </div>
+      <div id="actionPanel"></div>
     </div>
     <div id="how">
       <div class="step"><b>🤝 1. Handshake</b>each system grants the overlay permission</div>
@@ -293,6 +317,70 @@ document.getElementById('droneClose').addEventListener('click',()=>{
 function showView(id){ document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
   document.getElementById(id).classList.add('on'); window.scrollTo(0,0); }
 document.getElementById('backBtn').addEventListener('click',()=>{ showView('mapView'); setPresence('table',true); });
+
+/* ---------- COMMAND DECK ---------- */
+const COMMANDS=[
+ {label:'🔊 Volume up on TV', heard:'volume up on TV', target:'tv', run:actVolume},
+ {label:'📺 Play on the big screen', heard:'play on the big screen', target:'tv', run:actPlay},
+ {label:'🛸 Eyes up, drone', heard:'eyes up, drone', target:'drone', run:actLaunch},
+ {label:'🍽️ Dinner bell', heard:'dinner bell', target:'table', run:actDing},
+ {label:'🧊 Check the fridge', heard:'check the fridge', target:'fridge', run:actFridge},
+];
+let cmdBusy=false;
+const cmdBtnsEl=document.getElementById('cmdBtns');
+COMMANDS.forEach(c=>{ const b=document.createElement('button'); b.className='cmdbtn'; b.textContent=c.label;
+  b.addEventListener('click',()=>runCommand(c)); cmdBtnsEl.appendChild(b); });
+function runCommand(cmd){
+  if(cmdBusy) return; cmdBusy=true;
+  document.querySelectorAll('.cmdbtn').forEach(b=>b.disabled=true);
+  hideAction();
+  status.innerHTML='🎤 Heard: <b>&ldquo;'+cmd.heard+'&rdquo;</b> — swimming there…';
+  setPresence(cmd.target, true);
+  setTimeout(()=>{ trick();
+    setTimeout(()=>{ cmd.run(); }, 850);
+  }, 1500);
+}
+function trick(){ const s=document.getElementById('dropSpin');
+  s.classList.remove('trick'); void s.getBoundingClientRect(); s.classList.add('trick'); }
+function showAction(html){ document.getElementById('actionPanel').innerHTML='<div class="act">'+html+'</div>'; }
+function hideAction(){ document.getElementById('actionPanel').innerHTML=''; }
+function actVolume(){
+  showAction('📺 <b>TV volume</b><div class="vbar"><div class="vfill" id="vfill"></div></div><div id="vpct" style="margin-top:6px;">30%</div>');
+  let v=30;
+  const iv=setInterval(()=>{ v+=10;
+    const f=document.getElementById('vfill'), p=document.getElementById('vpct');
+    if(!f){ clearInterval(iv); return; }
+    f.style.width=v+'%'; p.textContent=v+'% 🔊';
+    if(v>=80){ clearInterval(iv); doneCmd('Volume is up — nice and loud.'); }
+  }, 340);
+}
+function actPlay(){ showAction('📺 <b>TV</b> — ▶️ playing Dad\u2019s Mix'); setTimeout(()=>doneCmd('On the big screen.'), 1700); }
+function actLaunch(){ showAction('🛸 <b>Drone</b> — airborne! Eyes on the playground.'); setTimeout(()=>doneCmd('Drone is up.'), 1700); }
+function actDing(){ showAction('🍽️ <b>Table</b> — 🔔 dinner bell! Everyone to the table!'); setTimeout(()=>doneCmd('Dinner is announced.'), 1700); }
+function actFridge(){ document.getElementById('fridgePanel').classList.add('on'); setTimeout(()=>doneCmd('Fridge is open.'), 1300); }
+function doneCmd(msg){
+  status.innerHTML='✅ '+msg+' Swimming back to the phone…';
+  setTimeout(()=>{ setPresence('phone', true); cmdBusy=false;
+    document.querySelectorAll('.cmdbtn').forEach(b=>b.disabled=false); }, 1300);
+}
+function parseCmd(t){
+  t=t.toLowerCase();
+  if(/sleep|goodnight/.test(t)){ if(!cmdBusy){ sleep(); status.innerHTML='💤 Goodnight — Kodakai is sleeping where you can see him.'; } return null; }
+  if(/volume|louder|turn (it |that )?up/.test(t)) return COMMANDS[0];
+  if(/play|watch|movie/.test(t)) return COMMANDS[1];
+  if(/drone|fly|film/.test(t)) return COMMANDS[2];
+  if(/dinner|dinner bell|eat/.test(t)) return COMMANDS[3];
+  if(/fridge|food|snack/.test(t)) return COMMANDS[4];
+  return null;
+}
+document.getElementById('cmdGo').addEventListener('click',()=>{
+  const inp=document.getElementById('cmdInput'), v=inp.value.trim(); if(!v||cmdBusy) return;
+  const c=parseCmd(v);
+  if(c) runCommand(c); else status.innerHTML='🤔 Did not catch that — try &ldquo;volume up on tv&rdquo;.';
+  inp.value='';
+});
+document.getElementById('cmdInput').addEventListener('keydown',e=>{
+  if(e.key==='Enter') document.getElementById('cmdGo').click(); });
 /* ---------- GAME NIGHT ---------- */
 const board=document.getElementById('board'), banner=document.getElementById('turnBanner'),
       gearCard=document.getElementById('gearCard');
