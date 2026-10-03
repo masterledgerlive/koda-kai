@@ -48,6 +48,11 @@
   #fridgePanel{position:fixed; inset:0; background:rgba(4,15,24,.78); display:none;
     align-items:center; justify-content:center; padding:18px; z-index:50;}
   #fridgePanel.on{display:flex;}
+  #dronePanel{position:fixed; inset:0; background:rgba(4,15,24,.78); display:none;
+    align-items:center; justify-content:center; padding:18px; z-index:50;}
+  #dronePanel.on{display:flex;}
+  .rec{animation:blink 1.1s steps(2) infinite;}
+  @keyframes blink{50%{opacity:.25;}}
   .fridge{width:min(430px,100%); background:linear-gradient(#dfe9f2,#b9c9d8);
     border-radius:22px; padding:14px; color:#123;}
   .fridge .handle{height:10px; background:#8fa5b8; border-radius:6px; margin:2px 30px 10px;}
@@ -61,6 +66,9 @@
   .step{background:var(--card); border:1px solid #1e4a68; border-radius:12px;
     padding:10px 14px; font-size:13px; color:var(--dim); text-align:center;}
   .step b{display:block; color:var(--ink); font-size:14px; margin-bottom:2px;}
+  #builders{margin-top:12px; text-align:center; color:var(--dim); font-size:14px;
+    background:var(--card); border:1px dashed #2a6a94; border-radius:12px; padding:12px 16px;}
+  #builders b{color:var(--gold);}
   /* game night */
   #board{width:100%; height:auto; display:block; background:#0c283d;
     border:1px solid #1e4a68; border-radius:18px; margin-top:12px;}
@@ -94,11 +102,11 @@
 <main>
   <!-- MAP VIEW -->
   <section id="mapView" class="view on">
-    <svg id="map" viewBox="0 0 1000 700" role="img" aria-label="Network map">
+    <svg id="map" viewBox="0 0 1200 800" role="img" aria-label="Network map">
       <g id="roads"></g>
       <g id="packets"></g>
       <g id="cities"></g>
-      <g id="drop" transform="translate(500,350)">
+      <g id="drop" transform="translate(170,72)">
         <path d="M0,-30 C15,-11 21,0 21,11 A21,21 0 1 1 -21,11 C-21,0 -15,-11 0,-30 Z" fill="#4cc9f0"/>
         <path d="M-8,-14 C-4,-18 -1,-20 2,-22" stroke="#bfe9ff" stroke-width="4" stroke-linecap="round" fill="none" opacity=".7"/>
         <g id="faceAwake">
@@ -116,12 +124,16 @@
       <button class="scn" data-scn="fridge">🧊 Open the fridge<small>hop over &amp; show files, notes, builds</small></button>
       <button class="scn" data-scn="sleep">😴 Sleep mode<small>seen sleeping till woken, playfully</small></button>
       <button class="scn" data-scn="game">🎲 Game night<small>top-down table — characters are the pieces</small></button>
+      <button class="scn" data-scn="car">🚗 Car mode<small>rides along — nav, tunes, eyes on road</small></button>
+      <button class="scn" data-scn="drone">🛸 Drone cam<small>sky eye up — filming the playground</small></button>
+      <button class="scn" data-scn="bat">🏏 Smart bat<small>bat + ball data — kids' analytics</small></button>
     </div>
     <div id="how">
       <div class="step"><b>🤝 1. Handshake</b>each system grants the overlay permission</div>
       <div class="step"><b>🛋️ 2. Layover</b>Kodakai takes the whole interface, naturally</div>
       <div class="step"><b>🏠 3. HQ runs it</b>one mainframe mind, many bodies</div>
     </div>
+    <div id="builders">🔧 <b>Built open:</b> 3D-print your own buddy, wire up a bat, add a station — open-source infrastructure, and the community builds the hive with us.</div>
   </section>
 
   <!-- GAME VIEW -->
@@ -155,18 +167,35 @@
 </div>
 
 <footer>Kodakai Network · the hive, seen from above · <a href="index.html">← back to Koda Kai</a></footer>
+<!-- DRONE -->
+<div id="dronePanel">
+  <div class="fridge">
+    <div class="fscreen">
+      <h3><span class="rec">🔴 REC</span> Drone eye — playground cam</h3>
+      <div class="fcard">🏀 <b>Tracking:</b> ball in flight… lines up the shot…</div>
+      <div class="fcard">🎬 <b>Kodakai:</b> "Hold it… hold it… <b>THAT'S the one!</b> Unforgettable."</div>
+      <div class="fcard">📡 <b>Feed:</b> live to the table + your phone, at the same time.</div>
+    </div>
+    <div class="closeRow"><button class="gbtn" id="droneClose">Land drone</button></div>
+  </div>
+</div>
 <script>
 /* ---------- MAP ---------- */
 const NS='http://www.w3.org/2000/svg';
 const stations=[
-  {id:'hq',    name:'🏠 HQ Mainframe', sub:'the mind',        x:500,y:350, hq:true},
-  {id:'phone', name:'📱 Phone',        sub:'pocket city',     x:190,y:150},
-  {id:'tablet',name:'📲 Tablet',       sub:'couch town',      x:810,y:150},
-  {id:'laptop',name:'💻 Laptop',       sub:'desk village',    x:150,y:520},
-  {id:'tv',    name:'📺 TV',           sub:'big screen metro',x:850,y:520},
-  {id:'table', name:'🍽️ Table',        sub:'party city ★',    x:500,y:110},
-  {id:'fridge',name:'🧊 Fridge',       sub:'kitchen outpost', x:500,y:590},
-  {id:'cloud', name:'☁️ Cloud',        sub:'backup harbor',   x:920,y:350},
+  {id:'hq',    name:'🏠 HQ Mainframe', sub:'the mind',       x:600,y:400, hq:true},
+  {id:'phone', name:'📱 Phone',        sub:'pocket city',    x:170,y:130},
+  {id:'tablet',name:'📲 Tablet',       sub:'couch town',     x:1030,y:130},
+  {id:'laptop',name:'💻 Laptop',       sub:'desk village',   x:130,y:670},
+  {id:'tv',    name:'📺 TV',           sub:'big screen metro',x:1070,y:670},
+  {id:'table', name:'🍽️ Table',        sub:'party city ★',   x:600,y:90},
+  {id:'fridge',name:'🧊 Fridge',       sub:'kitchen outpost',x:600,y:710},
+  {id:'cloud', name:'☁️ Cloud',        sub:'backup harbor',  x:1130,y:400},
+  {id:'car',   name:'🚗 Car',          sub:'drive city',     x:330,y:260},
+  {id:'keychain',name:'🔑 Keychain',   sub:'identity token', x:870,y:260},
+  {id:'buddies',name:'🤖 Buddies',     sub:'doll · robo-dog',x:330,y:540},
+  {id:'drone', name:'🛸 Drone',        sub:'sky eye',        x:870,y:540},
+  {id:'bat',   name:'🏏 Smart Bat',    sub:'playground stats',x:770,y:640},
 ];
 const byId={}; stations.forEach(s=>byId[s.id]=s);
 const cities=document.getElementById('cities'), roads=document.getElementById('roads'),
@@ -175,10 +204,10 @@ function el(n,attrs,parent){const e=document.createElementNS(NS,n);
   for(const k in attrs)e.setAttribute(k,attrs[k]); if(parent)parent.appendChild(e); return e;}
 // roads + packets
 stations.forEach(s=>{ if(s.hq)return;
-  el('line',{x1:500,y1:350,x2:s.x,y2:s.y,class:'road'},roads);
+  el('line',{x1:600,y1:400,x2:s.x,y2:s.y,class:'road'},roads);
   const p=el('circle',{r:5,class:'packet'},packets);
   const m=el('animateMotion',{dur:(2.4+Math.random()*2).toFixed(1)+'s',repeatCount:'indefinite',
-    path:`M500,350 L${s.x},${s.y}`},p);
+    path:`M600,400 L${s.x},${s.y}`},p);
 });
 // cities
 stations.forEach(s=>{
@@ -194,7 +223,7 @@ stations.forEach(s=>{
   const u=el('text',{x:s.x,y:s.y+h/2-1,class:'sub'},g); u.textContent=s.sub;
 });
 // drop movement (lerped)
-let dx=500,dy=350,tx=500,ty=350;
+let dx=170,dy=72,tx=170,ty=72;
 (function glide(){ dx+=(tx-dx)*.06; dy+=(ty-dy)*.06;
   drop.setAttribute('transform',`translate(${dx.toFixed(1)},${dy.toFixed(1)})`);
   requestAnimationFrame(glide); })();
@@ -211,6 +240,11 @@ const statusText={
   fridge:'Kodakai hopped to the <b>🧊 Fridge</b> — showing files, notes & builds while you talk.',
   cloud:'Kodakai is visiting the <b>☁️ Cloud</b> — backup harbor, keeping everything safe.',
   hq:'Kodakai is home at <b>🏠 HQ</b> — the mainframe mind, thinking fast.',
+  car:'Kodakai is riding in the <b>🚗 Car</b> — nav, tunes, and eyes on the road.',
+  keychain:'Kodakai shrank to the <b>🔑 Keychain</b> — the identity token, carrying you station to station.',
+  buddies:'Kodakai is with the <b>🤖 Buddies</b> — doll, robo-dog, the whole crew. They move, he drives.',
+  drone:'Kodakai took the <b>🛸 Drone</b> — sky eye up, filming. That playground basketball shot will be unforgettable.',
+  bat:'Kodakai linked the <b>🏏 Smart Bat</b> — bat + ball data flowing, playground analytics for the kids.',
 };
 function setPresence(id,announce){
   const s=byId[id]; tx=s.x; ty=s.y-58;
@@ -246,10 +280,16 @@ document.querySelectorAll('.scn').forEach(b=>b.addEventListener('click',()=>{
   else if(s==='fridge'){ setPresence('fridge',true);
     document.getElementById('fridgePanel').classList.add('on'); }
   else if(s==='sleep'){ sleeping?wake():sleep(); }
+  else if(s==='car') setPresence('car',true);
+  else if(s==='drone'){ setPresence('drone',true);
+    document.getElementById('dronePanel').classList.add('on'); }
+  else if(s==='bat') setPresence('bat',true);
   else if(s==='game'){ showView('gameView'); startGame(); }
 }));
 document.getElementById('fridgeClose').addEventListener('click',()=>{
   document.getElementById('fridgePanel').classList.remove('on'); setPresence('table',true); });
+document.getElementById('droneClose').addEventListener('click',()=>{
+  document.getElementById('dronePanel').classList.remove('on'); });
 function showView(id){ document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
   document.getElementById(id).classList.add('on'); window.scrollTo(0,0); }
 document.getElementById('backBtn').addEventListener('click',()=>{ showView('mapView'); setPresence('table',true); });
