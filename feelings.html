@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Feelings Book — Kodakai</title>
+<style>
+  :root{--sea:#0a2233;--sea2:#0e3049;--gold:#ffd166;--ink:#eaf6ff;--dim:#9db8c9;--drop:#4cc9f0;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{margin:0;font-family:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif;color:var(--ink);min-height:100vh;
+    background:radial-gradient(1000px 700px at 50% -10%,var(--sea2),var(--sea));}
+  header{text-align:center;padding:20px 14px 2px;}
+  header h1{margin:0;font-size:26px;}
+  header p{color:var(--dim);font-size:14px;margin:6px 0 0;font-style:italic;}
+  #app{max-width:640px;margin:0 auto;padding:12px;}
+  .card{background:#0c283d;border:1px solid #1e4a68;border-radius:18px;padding:18px;margin-bottom:14px;}
+  .view{display:none;} .view.show{display:block;animation:fadein .5s ease;}
+  @keyframes fadein{from{opacity:0;transform:translateY(10px);}}
+  h2{margin:0 0 12px;font-size:20px;}
+  /* feel */
+  .feelGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .feel{border:2px solid #1e4a68;background:#123a52;border-radius:16px;padding:18px 8px;font-size:15px;
+    font-weight:700;color:var(--ink);cursor:pointer;font-family:inherit;}
+  .feel .e{font-size:44px;display:block;margin-bottom:6px;}
+  .feel.on{border-color:var(--gold);box-shadow:0 0 16px rgba(255,209,102,.35);}
+  /* draw */
+  #cv{background:#fff;border-radius:12px;touch-action:none;cursor:crosshair;width:100%;display:block;}
+  #palRow{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap;align-items:center;}
+  .sw{width:38px;height:38px;border-radius:50%;border:3px solid transparent;cursor:pointer;}
+  .sw.on{border-color:var(--gold);}
+  .sz{border:1px solid #2a6a94;background:#123a52;color:var(--ink);border-radius:8px;padding:6px 10px;cursor:pointer;font-weight:700;}
+  .sz.on{background:var(--gold);color:#123;border-color:var(--gold);}
+  /* watch */
+  #watchStage{display:flex;gap:14px;align-items:center;justify-content:center;margin-bottom:12px;}
+  #watchDrop{width:130px;animation:float 4s ease-in-out infinite;}
+  @keyframes float{50%{transform:translateY(-8px);}}
+  #watchDrawWrap{position:relative;}
+  #watchDraw{width:190px;border-radius:12px;background:#fff;transition:transform .8s,filter .8s,opacity .5s;}
+  #watchDraw.shake{animation:shk .5s linear 3;}
+  @keyframes shk{25%{transform:translate(-7px,4px) rotate(-3deg);}75%{transform:translate(7px,-4px) rotate(3deg);}}
+  #watchDraw.calm{transform:scale(.62);}
+  #watchDraw.droop{transform:translateY(14px);}
+  #watchDraw.light{filter:brightness(1.25) saturate(1.2);}
+  #watchDraw.dim{filter:brightness(.72);}
+  #watchDraw.flick{animation:flk .35s linear 4;}
+  @keyframes flk{50%{opacity:.35;}}
+  #watchDraw.cozy{filter:sepia(.35) brightness(1.05);}
+  #watchDraw.bounce{animation:bnc .6s ease 2;}
+  @keyframes bnc{40%{transform:translateY(-26px) scale(1.05);}}
+  #watchDraw.glow{filter:drop-shadow(0 0 22px var(--gold));}
+  #storyLine{font-size:19px;line-height:1.7;min-height:120px;}
+  #storyLine .cur{color:var(--gold);}
+  /* buttons */
+  .big{width:100%;border:none;border-radius:14px;padding:15px;font-size:17px;font-weight:800;cursor:pointer;
+    background:var(--gold);color:#3a2c00;font-family:inherit;margin-top:12px;}
+  .ghost{background:#123a52;color:var(--ink);border:1px solid #2a6a94;margin-top:10px;}
+  .row{display:flex;gap:10px;} .row .big,.row .ghost{margin-top:10px;}
+  /* gallery */
+  #gal{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .gcard{background:#123a52;border:1px solid #2a6a94;border-radius:12px;padding:8px;cursor:pointer;text-align:center;}
+  .gcard img{width:100%;border-radius:8px;background:#fff;}
+  .gcard .m{font-size:12px;color:var(--dim);margin-top:4px;}
+  #weathered{text-align:center;color:var(--gold);font-style:italic;margin:10px 0;font-size:15px;}
+  footer{text-align:center;color:var(--dim);font-size:12px;padding:20px;}
+  footer a{color:var(--drop);}
+</style>
+</head>
+<body>
+<header>
+  <h1>💧 My Feelings Book</h1>
+  <p>draw it · feel it · watch it change · remember you drew that</p>
+</header>
+<div id="app">
+  <div class="card view show" id="vFeel">
+    <h2>How are you feeling right now?</h2>
+    <div class="feelGrid" id="feelGrid"></div>
+  </div>
+  <div class="card view" id="vDraw">
+    <h2 id="drawTitle">Draw it</h2>
+    <canvas id="cv" width="600" height="380"></canvas>
+    <div id="palRow"></div>
+    <div class="row">
+      <button class="big ghost" id="clearBtn" style="flex:1">🧽 Clear</button>
+      <button class="big" id="doneDrawBtn" style="flex:2">Done →</button>
+    </div>
+  </div>
+  <div class="card view" id="vWatch">
+    <h2 id="watchTitle">Watch</h2>
+    <div id="watchStage">
+      <img id="watchDrop" src="assets/char/drop-toy3d.webp" alt="Drop">
+      <div id="watchDrawWrap"><img id="watchDraw" alt="your drawing"></div>
+    </div>
+    <div id="storyLine"></div>
+    <div class="row">
+      <button class="big ghost" id="replayBtn" style="flex:1">↺ Replay</button>
+      <button class="big" id="nextBeatBtn" style="flex:2">▶</button>
+    </div>
+    <button class="big ghost" id="saveBtn" style="display:none">📖 Keep it in my book</button>
+  </div>
+  <div class="card">
+    <h2>📖 My book</h2>
+    <div id="weathered"></div>
+    <div id="gal"></div>
+  </div>
+</div>
+<footer><a href="magic.html">← magic drop</a> · <a href="index.html">Koda Kai</a></footer>
+<script>
+const $=id=>document.getElementById(id);
+const FEELS=[
+ {id:'angry',e:'😠',n:'Angry'},{id:'sad',e:'😢',n:'Sad'},{id:'scared',e:'😨',n:'Scared'},
+ {id:'happy',e:'😊',n:'Happy'},{id:'tired',e:'😴',n:'Tired'},{id:'silly',e:'🤪',n:'Silly'}];
+let feel='angry', brush='#e63946', bsize=8, beat=0, curEntry=null;
+const store={ get(){ try{return JSON.parse(localStorage.getItem('kk_feelings')||'[]');}catch(e){return[];} },
+  set(v){ try{localStorage.setItem('kk_feelings',JSON.stringify(v));}catch(e){} } };
+/* ---------- stories: acknowledge → it's OK → animate → remind ---------- */
+const STORIES={
+ angry:{beats:[
+  ["This is your angry. Look at it — big, red, LOUD.","shake"],
+  ["It's OK to feel angry. Angry is just your heart saying <i>this matters!</i>",null],
+  ["Let's breathe with it… in… out… Watch it get smaller.","calm"],
+  ["See? You felt it, you drew it, and now it's just a picture.","light"],
+  ["Feelings come like weather — and weather always changes. You weathered this one. 💧","glow"]]},
+ sad:{beats:[
+  ["This is your sad. It's heavy, isn't it?","droop"],
+  ["It's OK to feel sad. Sad means you loved something.",null],
+  ["Drop is sitting right here with it. Not fixing it — just sitting.","light"],
+  ["Feel how it gets a little lighter when it's not alone?","glow"],
+  ["You never have to explain it again. It's here, in your book. 💧","cozy"]]},
+ scared:{beats:[
+  ["This is your scared. Dark and wobbly.","flick"],
+  ["It's OK to feel scared. Brave people feel scared too — brave is feeling it anyway.",null],
+  ["Drop brought a light. Watch the dark get smaller around it.","light"],
+  ["See? The scary shrinks when you look at it with a friend.","glow"],
+  ["You were brave enough to draw it. That was the bravest part. 💧","cozy"]]},
+ happy:{beats:[
+  ["This is your happy! Bright and bouncy!","bounce"],
+  ["Let's bottle this sunshine — you'll want it on a rainy day.",null],
+  ["Done. Your happy is saved forever.","glow"],
+  ["Remember you drew that? On gray days, come back here and visit it.","light"],
+  ["Happiness shared is happiness doubled. Who will you show? 💧","bounce"]]},
+ tired:{beats:[
+  ["This is your tired. All droopy and soft.","droop"],
+  ["It's OK to feel tired. Even waves rest on the shore.",null],
+  ["Let's tuck it in… nice and cozy…","dim"],
+  ["Shhh. Rest isn't quitting. Rest is how you grow.","cozy"],
+  ["Sleep well. Tomorrow's drawing will be brighter. 💧","glow"]]},
+ silly:{beats:[
+  ["This is your silly! Wiggly and wild!","bounce"],
+  ["Silly is a superpower. It turns boring into brilliant.",null],
+  ["Drop is doing his silliest face. Can you top it?","shake"],
+  ["Laughter is the best drawing of all — you can't even see it, but everyone feels it.","glow"],
+  ["Stay silly. The world needs it. 💧","light"]]}};
+/* ---------- feel ---------- */
+const fg=$('feelGrid');
+FEELS.forEach(f=>{ const b=document.createElement('button'); b.className='feel'+(f.id===feel?' on':'');
+  b.innerHTML='<span class="e">'+f.e+'</span>'+f.n;
+  b.addEventListener('click',()=>{ feel=f.id; fg.querySelectorAll('.feel').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); setTimeout(()=>show('vDraw'),350);
+    $('drawTitle').textContent='Draw your '+f.n.toLowerCase()+' — '+f.e; });
+  fg.appendChild(b); });
+function show(id){ document.querySelectorAll('.view').forEach(v=>v.classList.remove('show')); $(id).classList.add('show'); }
+/* ---------- draw ---------- */
+const cv=$('cv'), ctx=cv.getContext('2d');
+ctx.fillStyle='#fff'; ctx.fillRect(0,0,cv.width,cv.height);
+ctx.lineCap='round'; ctx.lineJoin='round';
+const COLORS=['#e63946','#f4a261','#ffd166','#2ec4b6','#4cc9f0','#7b6fd0','#ff8fc7','#222222'];
+const pr=$('palRow');
+COLORS.forEach((c,i)=>{ const s=document.createElement('div'); s.className='sw'+(i===0?' on':'');
+  s.style.background=c; s.addEventListener('click',()=>{ brush=c; pr.querySelectorAll('.sw').forEach(x=>x.classList.remove('on')); s.classList.add('on'); });
+  pr.appendChild(s); });
+[6,12,22].forEach((s,i)=>{ const b=document.createElement('button'); b.className='sz'+(i===1?' on':''); b.textContent='●'.repeat(i+1);
+  b.addEventListener('click',()=>{ bsize=s; pr.querySelectorAll('.sz').forEach(x=>x.classList.remove('on')); b.classList.add('on'); });
+  pr.appendChild(b); });
+let drawing=false,last=null;
+function pos(e){ const r=cv.getBoundingClientRect();
+  const p=e.touches?e.touches[0]:e;
+  return [(p.clientX-r.left)*cv.width/r.width,(p.clientY-r.top)*cv.height/r.height]; }
+cv.addEventListener('pointerdown',e=>{ drawing=true; last=pos(e); e.preventDefault(); });
+cv.addEventListener('pointermove',e=>{ if(!drawing) return; const p=pos(e);
+  ctx.strokeStyle=brush; ctx.lineWidth=bsize; ctx.beginPath(); ctx.moveTo(last[0],last[1]); ctx.lineTo(p[0],p[1]); ctx.stroke(); last=p; });
+addEventListener('pointerup',()=>drawing=false);
+$('clearBtn').addEventListener('click',()=>{ ctx.fillStyle='#fff'; ctx.fillRect(0,0,cv.width,cv.height); });
+$('doneDrawBtn').addEventListener('click',()=>{
+  const img=cv.toDataURL('image/png');
+  curEntry={id:'f'+Date.now(),emotion:feel,date:new Date().toLocaleDateString(),img};
+  startWatch(curEntry,false);
+});
+/* ---------- watch ---------- */
+function startWatch(entry,replay){
+  curEntry=entry; beat=0; show('vWatch');
+  const f=FEELS.find(x=>x.id===entry.emotion);
+  $('watchTitle').textContent=(replay?'Remember you drew that? ':'')+f.e+' '+f.n;
+  $('watchDraw').src=entry.img; $('watchDraw').className='';
+  $('saveBtn').style.display=replay?'none':'';
+  $('nextBeatBtn').textContent='▶'; renderBeat();
+}
+function renderBeat(){ const st=STORIES[curEntry.emotion]; const [text,fx]=st.beats[beat];
+  $('storyLine').innerHTML='<span class="cur">'+text+'</span>';
+  const d=$('watchDraw'); d.className='';
+  if(fx){ void d.offsetWidth; d.classList.add(fx); if(fx==='shake') setTimeout(()=>d.classList.remove('shake'),1600); }
+  $('nextBeatBtn').textContent=beat<st.beats.length-1?'▶':'🌟 Done';
+}
+$('nextBeatBtn').addEventListener('click',()=>{ const st=STORIES[curEntry.emotion];
+  if(beat<st.beats.length-1){ beat++; renderBeat(); }
+  else { $('storyLine').innerHTML='The end. It\'s in your book now — you never have to re-explain it. 💧';
+    $('saveBtn').style.display=''; } });
+$('replayBtn').addEventListener('click',()=>{ if(curEntry) startWatch(curEntry,true); });
+$('saveBtn').addEventListener('click',()=>{ const all=store.get(); all.unshift(curEntry); store.set(all);
+  renderGal(); show('vFeel'); $('saveBtn').style.display='none';
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,cv.width,cv.height); });
+/* ---------- gallery ---------- */
+function renderGal(){ const all=store.get(), g=$('gal'); g.innerHTML='';
+  $('weathered').textContent=all.length?('🌊 '+all.length+' feeling'+(all.length>1?'s':'')+' weathered — every one passed, like weather does.'):'Your book is empty. Draw a feeling to begin.';
+  all.slice(0,30).forEach(en=>{ const c=document.createElement('div'); c.className='gcard';
+    const f=FEELS.find(x=>x.id===en.emotion);
+    c.innerHTML='<img src="'+en.img+'"><div class="m">'+f.e+' '+en.date+'</div>';
+    c.addEventListener('click',()=>startWatch(en,true)); g.appendChild(c); });
+}
+renderGal();
+</script>
+</body>
+</html>
