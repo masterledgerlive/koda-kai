@@ -1,7 +1,8 @@
-# Kodakai Infrastructure Plan 🌊
+# Koda Kai Infrastructure Plan 🐝
 
 *Huge-project terms: what the whole system looks like. Compiled 2026-10-03.*
-*Feature knock-off list: `research-features.md`. Vision: `vision-multi-station.md`.*
+*David's framing: "the central command hive — as we birth new Koda Kai out of the
+mother hive." Feature knock-off list: `research-features.md`. Vision: `vision-multi-station.md`.*
 
 ## The shape in one paragraph
 
@@ -28,8 +29,11 @@ if home goes dark.
 - **Smart toys:** the bat (swing analytics) and whatever the community 3D-prints next.
 - **Keychain Drop:** the identity token that carries *you* station to station.
 
-Every station runs the same single-file client lineage as today's app — one codebase,
-many faces. New stations get a **handshake**: pair over LAN/Tailscale, grant the overlay
+Every station runs the **sprite runtime** (`sprite/drop-agent.js`) — one copy of the
+program on every device. Include one script and any page becomes a station: Drop
+floats on, *becomes* the controller, listens on the HQ bus, executes visibly, and
+reports home. Demo: `sprite-demo.html` (phone sends, sprite swims, TV executes).
+New stations get a **handshake**: pair over LAN/Tailscale, grant the overlay
 permission (allow / require-approval / block per app), and they're in the hive.
 
 ## Layer 2 — Hive sync (the nervous system) ⚠️ THE GAP
@@ -41,6 +45,11 @@ A small always-on service on HQ. Everything multi-device flows through it:
 - **Votes & party state:** the table's live polls, whole-house favorite scores.
 - **Takeover alerts:** doorbell / "pizza's here" — even when the house is loud.
 - **Action trail:** every command's visible path — the "spell of fast computation" feel.
+  Say "volume up on TV": the phone shows the switch, Drop swims phone → TV, does a
+  trick on the volume button while the bar rises, "Done! ✔". Ask for something on
+  the PC or table: Drop **splits** off the phone, jumps toward the target, appears
+  there floating around pressing buttons, diving into chat boxes, filling prompts —
+  all visible, step by step. The user always knows *where* the action is.
 
 Without this, the app is a beautiful static island. With it, it's a hive.
 **This is build #1.**
@@ -87,17 +96,22 @@ Without this, the app is a beautiful static island. With it, it's a hive.
 
 ## Build order
 
-1. **HQ sync server** — presence, intents, votes, alerts, action trail.
-2. **Drop's action vocabulary + own cursor** per station, safety-gated.
-3. **Secrets-on-HQ + scoped station tokens** — before real control ships.
-4. **Mission agents with the approval loop.**
-5. **Table mode** — multi-touch party surface, votes, game boards.
-6. **Buddies & drone** — from map demo to real hardware control.
-7. Cloud failover + zero-conf station pairing.
+1. ✅ **Sprite runtime** — per-device Drop agent, Bluey-grade motion, phone→TV demo.
+2. **HQ sync server** — presence, intents, votes, alerts, action trail (the bus the
+   sprites already speak; give it a real home on Shadow).
+3. **Drop's action vocabulary + own cursor** per station, safety-gated.
+4. **Secrets-on-HQ + scoped station tokens** — before real control ships.
+5. **Mission agents with the approval loop** — born out of the mother hive, reporting
+   to David before anything ships.
+6. **Table mode** — multi-touch party surface, votes, game boards.
+7. **Buddies & drone** — from map demo to real hardware control.
+8. Cloud failover + zero-conf station pairing.
+9. The knock-off list (`research-features.md`), on repeat, forever.
 
 ## Honest status (2026-10-03)
 
 ✅ Static app + profiles + PIN gates + Learning Book · network map with presence,
-scenarios, command deck demo · repo + Pages pipeline · caption engine (37/383 true
-timings) · Communicator hub live.
-❌ Sync server · real cross-device control · mission agents · hardware control.
+scenarios, command deck demo · repo + Pages pipeline · caption engine (34 true
+timings merged, batch grinding) · Communicator hub live · **sprite runtime + demo**.
+❌ Sync server (bus is BroadcastChannel today) · real cross-device control ·
+mission agents · hardware control.
