@@ -75,3 +75,16 @@ behave and control within that system. All paths lead back to the headquarters
 mainframe: the one place Koda Kai operates from and in.
 
 More stations = more paths to live on. Same mind, faster, everywhere.
+
+## 9. Everyday companions & open hardware (David's brief, 2026-10-03)
+
+- 🚗 **Car** — Kodakai rides along: nav, tunes, eyes on the road.
+- 🔑 **Keychain Drop** — the identity token that carries you station to station.
+- 🤖 **Buddies** — the doll version, a small robot dog, any robot: in the interface,
+  under Kodakai's control, moving in the real world for you.
+- 🛸 **Drone** — flies, films, eyes on: produces the unforgettable basketball shot
+  at the playground, feed live everywhere at once.
+- 🏏 **Smart bat** — bat + ball data for kids' analytics; everyday objects become
+  instruments.
+- 🔧 **Open by design** — 3D printers, our own builds, open-source infrastructure.
+  The community helps build the hive.
