@@ -704,6 +704,7 @@
 /* ---------------- icons (inline SVG) ---------------- */
 function ic(p, sw){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="'+(sw||2)+'" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+p+'</svg>'; }
 const I = {
+  me: ic('<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>'),
   play: ic('<path d="M7 4.5v15l13-7.5z" fill="currentColor" stroke="none"/>'),
   tv: ic('<rect x="3" y="6" width="18" height="13" rx="3"/><path d="M8 2.5 12 6l4-3.5"/>'),
   book: ic('<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 18V5.5"/><path d="M8 7.5h8"/>'),
@@ -808,7 +809,7 @@ const S = {
   capWords:[],            // words the caption engine has taught Drop (from read-along videos)
   sounds:[],              // Band Room sound library (recorded + imported), addable to stories
   art:[],                 // Draw room gallery (saved pictures, this visit)
-  apps:{ watch:true, learn:true, monster:true, story:true, quests:true, discoveries:true,
+  apps:{ me:true, watch:true, learn:true, monster:true, story:true, quests:true, discoveries:true,
          tokens:true, learnany:true, music:true, chat:true, walkie:true, things:true, book:true },
   keys:{ fal:"", comfy:"", plugins:[{name:"",url:""},{name:"",url:""},{name:"",url:""}] },
   kidWatch:"both",
@@ -991,6 +992,7 @@ function go(screen){
 }
 function isAdult(){ return S.profile==="parent"||S.profile==="together"; }
 const APPMETA = {
+  me:{t:"All About Me", s:"Drop is getting to know you!", cls:"t-me", icon:"me", form:"round"},
   watch:{t:"Watch", s:"Dad's Mix & Kai's TV", cls:"t-watch", icon:"tv", form:"fish"},
   learn:{t:"Learn", s:"Learning Room", cls:"t-learn", icon:"book", form:"round"},
   monster:{t:"Monster Reader", s:"Teach Your Monster", cls:"t-monster", icon:"monster", form:"star"},
@@ -1006,6 +1008,7 @@ const APPMETA = {
   book:{t:"Learning Book", s:"Everything Drop remembers", cls:"t-book", icon:"scroll", form:"round"}
 };
 const SAY = {
+  me:"Tell me about YOU! Your yums, your yucks, your favorites \u2014 I am all water.",
   home:"Hi {KID}! I'm Drop. I learn by watching you play — pick something fun!",
   watch:"Ooh, video time! Dad's Mix is all mixed up and ready.",
   learn:"The Learning Room! Grown-ups picked every app in here just for you.",
@@ -1186,7 +1189,112 @@ function startFeed(){
 }
 
 /* ---------------- profile chooser ---------------- */
+
+/* ================================================================
+   ALL ABOUT ME -- login profiles Drop learns from (persisted)
+   ================================================================ */
+function defaultProfiles(){
+  return {
+    kai:{name:"Kai", face:"\U0001F9D2", color:"#2ec4b6",
+      yum:["pizza","spaghetti","dino nuggets"], yuck:["mushrooms"],
+      movies:["Toy Story"], sports:["soccer"],
+      likes:["dinosaurs","swimming"], dislikes:["loud noises"]},
+    koda:{name:"Koda", face:"\U0001F476", color:"#ffd166",
+      yum:["bananas","pancakes"], yuck:["spicy food"],
+      movies:["Bluey"], sports:["playground"],
+      likes:["bubbles","music"], dislikes:["naps"]}
+  };
+}
+function ensureProfiles(){ if(!S.profiles){ S.profiles=defaultProfiles(); loadProfiles(); } }
+function saveProfiles(){ try{ localStorage.setItem("kodakai-profiles-v1", JSON.stringify(S.profiles)); }catch(e){} }
+function loadProfiles(){ try{ var p=JSON.parse(localStorage.getItem("kodakai-profiles-v1")); if(p&&p.kai&&p.koda){ S.profiles=p; } }catch(e){} }
+var meEdit="kai";
+function myProf(){ ensureProfiles(); return S.profiles[meEdit]||S.profiles.kai; }
+var ME_SECTIONS=[
+  {key:"yum", emoji:"\U0001F60B", title:"Yum! Foods I love", ph:"Add a yummy food\u2026"},
+  {key:"yuck", emoji:"\U0001F922", title:"Nope! Foods I do not like", ph:"Add a not-yummy food\u2026"},
+  {key:"movies", emoji:"\U0001F3AC", title:"Movies I love", ph:"Add a movie\u2026"},
+  {key:"sports", emoji:"\u26BD", title:"Sports I like", ph:"Add a sport\u2026"},
+  {key:"likes", emoji:"\U0001F49B", title:"I like\u2026", ph:"Add something you like\u2026"},
+  {key:"dislikes", emoji:"\U0001F6AB", title:"Not for me\u2026", ph:"Add something you do not like\u2026"}
+];
+var ME_FACES=["\U0001F9D2","\U0001F466","\U0001F467","\U0001F9D1","\U0001F4A7","\U0001F308","\U0001F31F","\U0001F42C","\U0001F984","\U0001F422","\U0001F996","\U0001F41D","\U0001F981","\U0001F438"];
+var ME_COLORS=["#2ec4b6","#ffd166","#4cc9f0","#f4a261","#b388ff","#90be6d","#ef476f"];
+function meCSS(){
+  if(document.getElementById("meCSS")) return;
+  var st=document.createElement("style"); st.id="meCSS";
+  st.textContent=
+   ".facegrid{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0;}"+
+   ".facepick{font-size:30px;background:#fff;border:3px solid transparent;border-radius:14px;padding:6px 10px;cursor:pointer;}"+
+   ".facepick.sel{border-color:#ffd166;transform:scale(1.12);}"+
+   ".colorpick{width:38px;height:38px;border-radius:50%;border:3px solid transparent;cursor:pointer;}"+
+   ".colorpick.sel{border-color:#fff;transform:scale(1.12);}"+
+   ".chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;}"+
+   ".chip{background:#e8f4fd;border:2px solid #4cc9f0;color:#0a2233;border-radius:20px;padding:6px 8px 6px 14px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:6px;}"+
+   ".chipx{background:#ef476f;color:#fff;border:0;border-radius:50%;width:22px;height:22px;font-size:14px;line-height:1;cursor:pointer;}"+
+   ".addrow{display:flex;gap:8px;}"+
+   ".txtin{flex:1;border:2px solid #4cc9f0;border-radius:12px;padding:10px 12px;font-size:15px;}"+
+   ".kidtab{background:#fff;border:2px solid #4cc9f0;border-radius:12px;padding:8px 18px;font-weight:700;font-size:15px;cursor:pointer;color:#0a2233;}"+
+   ".kidtab.sel{background:#4cc9f0;color:#fff;}";
+  document.head.appendChild(st);
+}
+function meAdd(sec){
+  var inp=document.querySelector('[data-addin="'+sec+'"]');
+  var v=inp.value.trim(); if(!v) return;
+  var P=myProf();
+  if(P[sec].indexOf(v)<0){
+    P[sec].push(v); saveProfiles();
+    var sname=ME_SECTIONS.filter(function(s){ return s.key===sec; })[0];
+    book(P.name,"spark","#ffd166",P.name+" told Drop: "+sname.title+" \u2014 "+v);
+    earn(1,"telling Drop about me");
+  }
+  renderMe();
+}
+function renderMe(){
+  meCSS(); ensureProfiles(); morphTo("round");
+  if(!isAdult()) meEdit=(S.profile==="koda")?"koda":"kai";
+  var P=myProf();
+  var tabs=isAdult()
+    ? '<div style="display:flex;gap:8px;justify-content:center;margin-bottom:10px;">'+
+      '<button class="kidtab'+(meEdit==="kai"?" sel":"")+'" data-kidtab="kai">Kai</button>'+
+      '<button class="kidtab'+(meEdit==="koda"?" sel":"")+'" data-kidtab="koda">Koda</button></div>' : "";
+  var faceRow=ME_FACES.map(function(f){ return '<button class="facepick'+(P.face===f?" sel":"")+'" data-face="'+f+'">'+f+'</button>'; }).join("");
+  var colorRow=ME_COLORS.map(function(c){ return '<button class="colorpick'+(P.color===c?" sel":"")+'" data-color="'+c+'" style="background:'+c+'"></button>'; }).join("");
+  var secs=ME_SECTIONS.map(function(s){
+    var chips=P[s.key].map(function(c,ix){ return '<span class="chip">'+esc(c)+'<button class="chipx" data-sec="'+s.key+'" data-ix="'+ix+'" aria-label="remove">\u00d7</button></span>'; }).join("");
+    return '<div class="card"><h3 class="disp" style="font-size:20px;margin:4px 0 10px;">'+s.emoji+" "+s.title+'</h3>'+
+      '<div class="chips">'+(chips||'<span class="note">Nothing here yet \u2014 add the first one!</span>')+'</div>'+
+      '<div class="addrow"><input class="txtin" data-addin="'+s.key+'" placeholder="'+s.ph+'" maxlength="40">'+
+      '<button class="btn leaf" data-addbtn="'+s.key+'">+ Add</button></div></div>';
+  }).join("");
+  appEl.innerHTML='<div class="screen on">'+topbarHTML()+backrow("All About Me","Tell Drop about YOU","home")+mascotBlock("me",92)+
+   '<div class="card" style="text-align:center;">'+tabs+
+   '<div style="font-size:64px;line-height:1.2;">'+P.face+'</div>'+
+   '<div class="facegrid">'+faceRow+'</div>'+
+   '<div class="facegrid">'+colorRow+'</div>'+
+   '<div class="addrow" style="justify-content:center;margin-top:6px;"><input id="meName" class="txtin" style="max-width:200px;text-align:center;flex:0 1 200px;" value="'+esc(P.name)+'" maxlength="20">'+
+   '<button class="btn coral" id="meSaveName">That is me!</button></div>'+
+   '<p class="note">Drop is learning what makes you <b>you</b> \u2014 your yums, your yucks, your favorites. The more you tell him, the better he gets at picking things you will love. This saves on this device, and rides along in the Learning Book export \u2014 a memory book for life.</p></div>'+
+   secs+'</div>';
+  wireCommon(); renderTop();
+  document.querySelectorAll("[data-kidtab]").forEach(function(b){ b.addEventListener("click",function(){ meEdit=b.getAttribute("data-kidtab"); renderMe(); }); });
+  document.querySelectorAll("[data-face]").forEach(function(b){ b.addEventListener("click",function(){ P.face=b.getAttribute("data-face"); saveProfiles(); renderMe(); }); });
+  document.querySelectorAll("[data-color]").forEach(function(b){ b.addEventListener("click",function(){ P.color=b.getAttribute("data-color"); saveProfiles(); renderMe(); }); });
+  document.getElementById("meSaveName").addEventListener("click",function(){
+    var v=document.getElementById("meName").value.trim();
+    if(v){ P.name=v; saveProfiles(); book(v,"spark","#ffd166","Profile updated: now called "+v); }
+    renderMe();
+  });
+  document.querySelectorAll("[data-addbtn]").forEach(function(b){ b.addEventListener("click",function(){ meAdd(b.getAttribute("data-addbtn")); }); });
+  document.querySelectorAll("[data-addin]").forEach(function(inp){ inp.addEventListener("keydown",function(e){ if(e.key==="Enter"){ meAdd(inp.getAttribute("data-addin")); } }); });
+  document.querySelectorAll(".chipx").forEach(function(x){ x.addEventListener("click",function(){
+    var sec=x.getAttribute("data-sec"), ix=+x.getAttribute("data-ix");
+    P[sec].splice(ix,1); saveProfiles(); renderMe();
+  }); });
+}
+
 function renderProfiles(){
+
   appEl.innerHTML =
   '<div class="screen on"><div class="choose-hero">'+
     '<div class="mascot-wrap"><button class="mascot-btn" id="mascotBtn" aria-label="Drop the water buddy">'+dropSVG(150)+'</button></div>'+
@@ -1222,7 +1330,7 @@ function renderProfiles(){
 function renderHome(){
   morphTo(S.profile==="koda" ? "round" : "drop");
   const ins=brainInsight();
-  const order=["watch","learn","monster","story","quests","discoveries","tokens","learnany","music","chat","walkie","things","book"];
+  const order=["me","watch","learn","monster","story","quests","discoveries","tokens","learnany","music","chat","walkie","things","book"];
   const badges={
     tokens:function(){ return '<span class="bdg">'+(S.profile==="koda"?S.tokens.koda:S.tokens.kai)+' tokens</span>'; },
     quests:function(){ const n=S.quests.filter(function(q){return q.got<q.need;}).length; return n?'<span class="bdg">'+n+' active</span>':""; },
@@ -2767,7 +2875,7 @@ function renderBook(){
   document.querySelectorAll("[data-bf]").forEach(function(b){ b.addEventListener("click", function(){ bookFilter=b.getAttribute("data-bf"); renderBook(); }); });
   document.getElementById("bkExport").addEventListener("click", function(){
     const payload={app:"Koda Kai Learning Book", exported:new Date().toISOString(),
-      tokens:S.tokens, stars:S.stars,
+      tokens:S.tokens, stars:S.stars, profiles:S.profiles,
       discoveries:S.discoveries.map(function(d){ return {name:d.name, kind:d.kind, zone:d.zone, verified:d.verified, description:d.desc, foundBy:d.who}; }),
       quests:S.quests.map(function(q){ return {title:q.title, progress:q.got+"/"+q.need, done:q.got>=q.need}; }),
       stories:S.stories.map(function(s){ return {title:s.title, by:s.who, scenes:s.scenes.map(function(x){return x.text;})}; }),
@@ -3996,11 +4104,12 @@ function renderDraw(){
    RENDER DISPATCH + BOOT
    ================================================================ */
 function render(){
-  stopSong(); stopRecorder(); stopLayers(); stopFeed();
+  ensureProfiles(); stopSong(); stopRecorder(); stopLayers(); stopFeed();
   if(!introDone) return renderIntro();
   const scr=S.screen;
   if(scr==="profiles" || !S.profile) return renderProfiles();
   if(scr==="home") return renderHome();
+  if(scr==="me") return renderMe();
   if(scr==="watch") return renderWatch();
   if(scr==="learn") return renderLearn();
   if(scr==="games") return renderGames();
