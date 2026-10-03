@@ -49,6 +49,7 @@
     <button class="cmdBtn" data-cmd="volume-up">🔊 Volume up on TV</button>
     <button class="cmdBtn" data-cmd="play">▶ Play on the big screen</button>
     <button class="cmdBtn" data-cmd="dinner-bell">🔔 Dinner bell</button>
+    <button class="cmdBtn" id="danceBtn" style="border-color:var(--gold);color:var(--gold)">🕺 Dance across systems</button>
   </div>
   <div class="panel" id="tvPanel">
     <h3>📺 TV — station</h3>
@@ -107,10 +108,19 @@ bus.onMsg(m=>{
 /* ---------- phone station ---------- */
 const phoneAgent=new DropAgent('phone',document.getElementById('phoneScreen'),{bus});
 phoneAgent.place(50,30);
-document.querySelectorAll('.cmdBtn').forEach(b=>b.addEventListener('click',()=>{
+document.querySelectorAll('.cmdBtn[data-cmd]').forEach(b=>b.addEventListener('click',()=>{
   phoneAgent.speak('Sending! 🛰️'); phoneAgent.happy();
   phoneAgent.send('tv',b.dataset.cmd,{});
 }));
+/* the dance: phone → TV with a trick at each stop → home again */
+document.getElementById('danceBtn').addEventListener('click',async ()=>{
+  log('🕺 <b>dance:</b> system to system…');
+  phoneAgent.speak('Watch me go! 🕺');
+  phoneAgent.send('tv','dance-visit',{});
+  await new Promise(r=>setTimeout(r,2600));
+  phoneAgent.speak('Back home! ✨'); await phoneAgent.happy(); await phoneAgent.trick();
+  log('🕺 <b>dance:</b> complete — phone → tv → phone.');
+});
 /* ---------- TV station ---------- */
 const tvAgent=new DropAgent('tv',document.getElementById('tvScreen'),{bus,
   onAction:async (action)=>{
@@ -130,6 +140,9 @@ const tvAgent=new DropAgent('tv',document.getElementById('tvScreen'),{bus,
       tvAgent.speak('Dinner! 🔔');
       const bn=document.getElementById('tvBanner'); bn.style.display='block';
       setTimeout(()=>bn.style.display='none',2600);
+    } else if(action==='dance-visit'){
+      tvAgent.speak('Heeey! 🕺');
+      await tvAgent.trick(); await tvAgent.happy(); await tvAgent.trick();
     }
   }});
 tvAgent.place(82,82);
